@@ -49,12 +49,22 @@ use std::str::FromStr;
 use std::string::ToString;
 use std::vec::Vec;
 
+use libc::{c_long};
 use libc::consts::os::sysconf::{_SC_CLK_TCK,_SC_PAGESIZE};
 use libc::funcs::posix88::unistd::sysconf;
 
 use ::{PID,UID,GID};
 use ::pidfile::read_pidfile;
 use ::utils::read_file;
+
+lazy_static! {
+    static ref TICKS_PER_SECOND: c_long = {
+        unsafe { sysconf(_SC_CLK_TCK) }
+    };
+    static ref PAGE_SIZE: c_long = {
+        unsafe { sysconf(_SC_PAGESIZE) }
+    };
+}
 
 fn procfs_path(pid: super::PID, name: &str) -> PathBuf {
     let mut path = PathBuf::new();
@@ -164,17 +174,14 @@ impl Memory {
             .map(|n| n.parse().unwrap())
             .collect();
 
-        let page_size = unsafe { sysconf(_SC_PAGESIZE) } as u64;
-        //let ticks_per_second: f64 = unsafe { sysconf(_SC_CLK_TCK) } as f64;
-
         return Ok(Memory {
-            size:       bytes[0] * page_size,
-            resident:   bytes[1] * page_size,
-            share:      bytes[2] * page_size,
-            text:       bytes[3] * page_size,
-            // lib:     bytes[4] * page_size,
-            data:       bytes[5] * page_size,
-            // dt:      bytes[6] * page_size
+            size:       bytes[0] * *PAGE_SIZE as u64,
+            resident:   bytes[1] * *PAGE_SIZE as u64,
+            share:      bytes[2] * *PAGE_SIZE as u64,
+            text:       bytes[3] * *PAGE_SIZE as u64,
+            // lib:     bytes[4] * *PAGE_SIZE as u64,
+            data:       bytes[5] * *PAGE_SIZE as u64,
+            // dt:      bytes[6] * *PAGE_SIZE as u64
         });
     }
 }
@@ -362,12 +369,6 @@ impl Process {
                 "Unexpected number of fields from /proc/[pid]/stat"));
         }
 
-        // This is 'safe' to call as sysconf should only return an error for
-        // invalid inputs, or options and limits (which _SC_CLK_TCK is not).
-        let ticks_per_second: f64 = unsafe { sysconf(_SC_CLK_TCK) } as f64;
-        // TODO: page size can't change on every process
-        let page_size = unsafe { sysconf(_SC_PAGESIZE) } as u64;
-
         // Read each field into an attribute for a new Process instance
         return Ok(Process {
             pid:                    pid,
@@ -385,17 +386,17 @@ impl Process {
             cminflt:                from_str!(stat[8]),
             majflt:                 from_str!(stat[9]),
             cmajflt:                from_str!(stat[10]),
-            utime:                  u64::from_str(stat[11]).unwrap() as f64 / ticks_per_second,
-            stime:                  u64::from_str(stat[12]).unwrap() as f64 / ticks_per_second,
-            cutime:                 i64::from_str(stat[13]).unwrap() as f64 / ticks_per_second,
-            cstime:                 i64::from_str(stat[14]).unwrap() as f64 / ticks_per_second,
+            utime:                  u64::from_str(stat[11]).unwrap() as f64 / *TICKS_PER_SECOND as f64,
+            stime:                  u64::from_str(stat[12]).unwrap() as f64 / *TICKS_PER_SECOND as f64,
+            cutime:                 i64::from_str(stat[13]).unwrap() as f64 / *TICKS_PER_SECOND as f64,
+            cstime:                 i64::from_str(stat[14]).unwrap() as f64 / *TICKS_PER_SECOND as f64,
             priority:               from_str!(stat[15]),
             nice:                   from_str!(stat[16]),
             num_threads:            from_str!(stat[17]),
             // itrealvalue:         from_str!(stat[18]),
             starttime:              from_str!(stat[19]),
             vsize:                  from_str!(stat[20]),
-            rss:                    i64::from_str(stat[21]).unwrap() * page_size as i64,
+            rss:                    i64::from_str(stat[21]).unwrap() * *PAGE_SIZE as i64,
             rsslim:                 from_str!(stat[22]),
             startcode:              from_str!(stat[23]),
             endcode:                from_str!(stat[24]),
@@ -414,8 +415,8 @@ impl Process {
             rt_priority:            from_str!(stat[37]),
             policy:                 from_str!(stat[38]),
             delayacct_blkio_ticks:  from_str!(stat[39]),
-            guest_time:             u64::from_str(stat[40]).unwrap() as f64 / ticks_per_second,
-            cguest_time:            i64::from_str(stat[41]).unwrap() as f64 / ticks_per_second,
+            guest_time:             u64::from_str(stat[40]).unwrap() as f64 / *TICKS_PER_SECOND as f64,
+            cguest_time:            i64::from_str(stat[41]).unwrap() as f64 / *TICKS_PER_SECOND as f64,
             start_data:             from_str!(stat[42]),
             end_data:               from_str!(stat[43]),
             start_brk:              from_str!(stat[44]),
