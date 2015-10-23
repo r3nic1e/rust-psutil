@@ -328,8 +328,7 @@ impl Process {
     ///
     /// Process names are surrounded by `()` characters, which are removed.
     fn parse_comm(s: &str) -> String {
-        let comm = s.to_string();
-        comm[1..comm.len()-1].to_string()
+        s[1..s.len()-1].to_string()
     }
 
     /// Attempts to read process information from `/proc/[pid]/stat`.
