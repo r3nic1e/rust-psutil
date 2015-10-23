@@ -333,11 +333,11 @@ impl Process {
     /// can be raised by `FromStr` too
     pub fn new(pid: PID) -> Result<Process> {
         let stat = try!(procfs(pid, "stat"));
-        let stat: Vec<&str> = stat[0..stat.len()-1].split(' ').collect();
+        let stat: Vec<&str> = stat.split(' ').collect();
 
         // This may only be the case for Linux, but this can be removed or
         // changed when/if support for other kernels is needed
-        if !stat.len() == 52 {
+        if stat.len() < 52 {
             return Err(Error::new(ErrorKind::Other,
                 "Unexpected number of fields from /proc/[pid]/stat"));
         }
