@@ -95,7 +95,7 @@ impl State {
             'Z' => Ok(State::Zombie),
             'T' => Ok(State::Traced),
             'W' => Ok(State::Paging),
-             _  => Err(Error::new(ErrorKind::Other, "Invalid state character"))
+             _  => Err(Error::new(ErrorKind::Other, format!("Invalid state character: {}", state)))
         }
     }
 }
