@@ -343,6 +343,7 @@ impl Process {
         let stat: Vec<&str> = stat.trim_right().split(' ').collect();
         let meta = try!(fs::metadata(path));
 
+        println!("STAT: {:?}", stat);
         // This may only be the case for Linux, but this can be removed or
         // changed when/if support for other kernels is needed
         if stat.len() < 52 {
