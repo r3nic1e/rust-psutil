@@ -174,6 +174,7 @@ impl Memory {
             .map(|n| n.parse().unwrap())
             .collect();
 
+	println!("PAGE SIZE: {:?}, bytes: {:?}", *PAGE_SIZE, bytes);
         return Ok(Memory {
             size:       bytes[0] * *PAGE_SIZE as u64,
             resident:   bytes[1] * *PAGE_SIZE as u64,
