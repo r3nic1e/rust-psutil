@@ -174,14 +174,14 @@ impl Memory {
             .map(|n| n.parse().unwrap())
             .collect();
 
-	println!("PAGE SIZE: {:?}, bytes: {:?}, statm: {}", *PAGE_SIZE, bytes, statm);
         return Ok(Memory {
             size:       bytes[0] * *PAGE_SIZE as u64,
             resident:   bytes[1] * *PAGE_SIZE as u64,
             share:      bytes[2] * *PAGE_SIZE as u64,
             text:       bytes[3] * *PAGE_SIZE as u64,
             // lib:     bytes[4] * *PAGE_SIZE as u64,
-            data:       bytes[5] * *PAGE_SIZE as u64,
+            // workaround kernel overflow bug
+            data:       bytes[5].wrapping_mul(*PAGE_SIZE as u64),
             // dt:      bytes[6] * *PAGE_SIZE as u64
         });
     }
