@@ -486,6 +486,10 @@ impl Process {
     pub fn cwd(&self) -> Result<PathBuf> {
         read_link(procfs_path(self.pid, "cwd"))
     }
+
+    pub fn exe(&self) -> Result<PathBuf> {
+        read_link(procfs_path(self.pid, "exe"))
+    }
 }
 
 impl PartialEq for Process {
